@@ -1,121 +1,81 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="brand">
+          <div className="brand-mark">VM</div>
+          <div>
+            <h1>VMIS</h1>
+            <p>Manager Dashboard</p>
+          </div>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
 
-      <div className="ticks"></div>
+        <nav className="nav-menu">
+          <button className="nav-item active">Tickets</button>
+          <button className="nav-item">History</button>
+        </nav>
+      </aside>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      <main className="main-content">
+        <header className="page-header">
+          <div>
+            <p className="eyebrow">Voice Maintenance Intake Station</p>
+            <h2>Maintenance Tickets</h2>
+          </div>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+          <div className="header-badge">Manager View</div>
+        </header>
+
+        <section className="stats-grid">
+          <article className="stat-card">
+            <span>Pending Review</span>
+            <strong>0</strong>
+          </article>
+
+          <article className="stat-card">
+            <span>Open</span>
+            <strong>0</strong>
+          </article>
+
+          <article className="stat-card">
+            <span>In Progress</span>
+            <strong>0</strong>
+          </article>
+
+          <article className="stat-card">
+            <span>Resolved</span>
+            <strong>0</strong>
+          </article>
+        </section>
+
+        <section className="tickets-panel">
+          <div className="panel-header">
+            <div>
+              <h3>All Tickets</h3>
+              <p>Review and manage maintenance requests.</p>
+            </div>
+
+            <select defaultValue="All">
+              <option>All</option>
+              <option>Pending Review</option>
+              <option>Open</option>
+              <option>In Progress</option>
+              <option>Resolved</option>
+            </select>
+          </div>
+
+          <div className="empty-state">
+            <div className="empty-icon">🎙️</div>
+            <h4>No tickets loaded yet</h4>
+            <p>
+              The dashboard will display maintenance tickets from the VMIS API.
+            </p>
+          </div>
+        </section>
+      </main>
+    </div>
   )
 }
 
