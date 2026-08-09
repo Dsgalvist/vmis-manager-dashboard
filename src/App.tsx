@@ -1,11 +1,51 @@
+import { useEffect, useState } from 'react'
 import './App.css'
+import { getTickets } from './services/api'
+import type { Ticket } from './types/Ticket'
 
 function App() {
+  const [tickets, setTickets] = useState<Ticket[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function loadTickets() {
+      try {
+        const data = await getTickets()
+        setTickets(data)
+      } catch (err) {
+        console.error(err)
+        setError('Could not load tickets.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadTickets()
+  }, [])
+
+  const pendingCount = tickets.filter(
+    (ticket) => ticket.status === 'Pending Review'
+  ).length
+
+  const openCount = tickets.filter(
+    (ticket) => ticket.status === 'Open'
+  ).length
+
+  const inProgressCount = tickets.filter(
+    (ticket) => ticket.status === 'In Progress'
+  ).length
+
+  const resolvedCount = tickets.filter(
+    (ticket) => ticket.status === 'Resolved'
+  ).length
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
           <div className="brand-mark">VM</div>
+
           <div>
             <h1>VMIS</h1>
             <p>Manager Dashboard</p>
@@ -31,22 +71,22 @@ function App() {
         <section className="stats-grid">
           <article className="stat-card">
             <span>Pending Review</span>
-            <strong>0</strong>
+            <strong>{pendingCount}</strong>
           </article>
 
           <article className="stat-card">
             <span>Open</span>
-            <strong>0</strong>
+            <strong>{openCount}</strong>
           </article>
 
           <article className="stat-card">
             <span>In Progress</span>
-            <strong>0</strong>
+            <strong>{inProgressCount}</strong>
           </article>
 
           <article className="stat-card">
             <span>Resolved</span>
-            <strong>0</strong>
+            <strong>{resolvedCount}</strong>
           </article>
         </section>
 
@@ -66,13 +106,53 @@ function App() {
             </select>
           </div>
 
-          <div className="empty-state">
-            <div className="empty-icon">🎙️</div>
-            <h4>No tickets loaded yet</h4>
-            <p>
-              The dashboard will display maintenance tickets from the VMIS API.
-            </p>
-          </div>
+          {loading && (
+            <div className="empty-state">
+              <h4>Loading tickets...</h4>
+            </div>
+          )}
+
+          {error && (
+            <div className="empty-state">
+              <h4>{error}</h4>
+            </div>
+          )}
+
+          {!loading && !error && tickets.length === 0 && (
+            <div className="empty-state">
+              <h4>No tickets available</h4>
+            </div>
+          )}
+
+          {!loading && !error && tickets.length > 0 && (
+            <div className="ticket-table">
+              <div className="ticket-row ticket-header">
+                <span>Ticket</span>
+                <span>Location</span>
+                <span>Equipment</span>
+                <span>Status</span>
+                <span>Created</span>
+              </div>
+
+              {tickets.map((ticket) => (
+                <div className="ticket-row" key={ticket.ticket_id}>
+                  <span>{ticket.ticket_id.slice(0, 8)}</span>
+
+                  <span>
+                    {ticket.location ?? `Unit ${ticket.unit_code ?? 'N/A'}`}
+                  </span>
+
+                  <span>{ticket.equipment ?? 'Not classified'}</span>
+
+                  <span>{ticket.status}</span>
+
+                  <span>
+                    {new Date(ticket.created_at).toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       </main>
     </div>
