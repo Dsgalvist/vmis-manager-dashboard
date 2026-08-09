@@ -7,6 +7,7 @@ function App() {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
 
   useEffect(() => {
     async function loadTickets() {
@@ -53,19 +54,29 @@ function App() {
         </div>
 
         <nav className="nav-menu">
-          <button className="nav-item active">Tickets</button>
-          <button className="nav-item">History</button>
+          <button className="nav-item active">
+            Tickets
+          </button>
+
+          <button className="nav-item">
+            History
+          </button>
         </nav>
       </aside>
 
       <main className="main-content">
         <header className="page-header">
           <div>
-            <p className="eyebrow">Voice Maintenance Intake Station</p>
+            <p className="eyebrow">
+              Voice Maintenance Intake Station
+            </p>
+
             <h2>Maintenance Tickets</h2>
           </div>
 
-          <div className="header-badge">Manager View</div>
+          <div className="header-badge">
+            Manager View
+          </div>
         </header>
 
         <section className="stats-grid">
@@ -94,7 +105,9 @@ function App() {
           <div className="panel-header">
             <div>
               <h3>All Tickets</h3>
-              <p>Review and manage maintenance requests.</p>
+              <p>
+                Review and manage maintenance requests.
+              </p>
             </div>
 
             <select defaultValue="All">
@@ -135,25 +148,168 @@ function App() {
               </div>
 
               {tickets.map((ticket) => (
-                <div className="ticket-row" key={ticket.ticket_id}>
-                  <span>{ticket.ticket_id.slice(0, 8)}</span>
-
+                <div
+                  className="ticket-row clickable"
+                  key={ticket.ticket_id}
+                  onClick={() => setSelectedTicket(ticket)}
+                >
                   <span>
-                    {ticket.location ?? `Unit ${ticket.unit_code ?? 'N/A'}`}
+                    {ticket.ticket_id.slice(0, 8)}
                   </span>
 
-                  <span>{ticket.equipment ?? 'Not classified'}</span>
-
-                  <span>{ticket.status}</span>
+                  <span>
+                    {ticket.location ??
+                      `Unit ${ticket.unit_code ?? 'N/A'}`}
+                  </span>
 
                   <span>
-                    {new Date(ticket.created_at).toLocaleString()}
+                    {ticket.equipment ?? 'Not classified'}
+                  </span>
+
+                  <span>
+                    {ticket.status}
+                  </span>
+
+                  <span>
+                    {new Date(
+                      ticket.created_at
+                    ).toLocaleString()}
                   </span>
                 </div>
               ))}
             </div>
           )}
         </section>
+
+        {selectedTicket && (
+          <section className="ticket-detail">
+            <div className="detail-header">
+              <div>
+                <p className="eyebrow">
+                  Ticket Detail
+                </p>
+
+                <h3>
+                  {selectedTicket.ticket_id.slice(0, 8)}
+                </h3>
+              </div>
+
+              <button
+                className="close-button"
+                onClick={() => setSelectedTicket(null)}
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="detail-grid">
+              <div className="detail-card">
+                <span>Location</span>
+
+                <strong>
+                  {selectedTicket.location ??
+                    `Unit ${
+                      selectedTicket.unit_code ?? 'N/A'
+                    }`}
+                </strong>
+              </div>
+
+              <div className="detail-card">
+                <span>Equipment</span>
+
+                <strong>
+                  {selectedTicket.equipment ??
+                    'Not classified'}
+                </strong>
+              </div>
+
+              <div className="detail-card">
+                <span>Status</span>
+
+                <strong>
+                  {selectedTicket.status}
+                </strong>
+              </div>
+
+              <div className="detail-card">
+                <span>Assigned To</span>
+
+                <strong>
+                  {selectedTicket.assigned_to ??
+                    'Not assigned'}
+                </strong>
+              </div>
+
+              <div className="detail-card">
+                <span>Confidence</span>
+
+                <strong>
+                  {selectedTicket.confidence !== null
+                    ? `${Math.round(
+                        selectedTicket.confidence * 100
+                      )}%`
+                    : 'Not available'}
+                </strong>
+              </div>
+
+              <div className="detail-card">
+                <span>Human Review</span>
+
+                <strong>
+                  {selectedTicket.requires_human_review ===
+                  null
+                    ? 'Not evaluated'
+                    : selectedTicket.requires_human_review
+                      ? 'Required'
+                      : 'Not required'}
+                </strong>
+              </div>
+            </div>
+
+            <div className="transcript-card">
+              <h4>Transcript</h4>
+
+              <p>
+                {selectedTicket.transcript ||
+                  'No transcript available.'}
+              </p>
+            </div>
+
+            <div className="transcript-card">
+              <h4>Issue Summary</h4>
+
+              <p>
+                {selectedTicket.issue_summary ??
+                  'No issue summary available.'}
+              </p>
+            </div>
+
+            <div className="audio-card">
+              <h4>Audio Recording</h4>
+
+              <audio
+                controls
+                src={selectedTicket.audio_url}
+              >
+                Your browser does not support audio playback.
+              </audio>
+            </div>
+
+            <div className="manager-actions">
+              <button className="approve-button">
+                Approve
+              </button>
+
+              <button className="edit-button">
+                Edit
+              </button>
+
+              <button className="reject-button">
+                Reject
+              </button>
+            </div>
+          </section>
+        )}
       </main>
     </div>
   )

@@ -244,6 +244,129 @@ button {
   background: rgba(66, 230, 214, 0.04);
 }
 
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:hover {
+  background: rgba(66, 230, 214, 0.08);
+}
+
+.ticket-detail {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid rgba(109, 231, 222, 0.12);
+  border-radius: 18px;
+  background: rgba(10, 28, 31, 0.9);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.18);
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.detail-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.close-button {
+  padding: 9px 14px;
+  border-radius: 10px;
+  color: #dffafa;
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.detail-card {
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.detail-card span {
+  display: block;
+  margin-bottom: 8px;
+  color: #7f9d9e;
+  font-size: 0.82rem;
+}
+
+.detail-card strong {
+  color: #efffff;
+}
+
+.transcript-card,
+.audio-card {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.transcript-card h4,
+.audio-card h4 {
+  margin: 0 0 10px;
+}
+
+.transcript-card p {
+  margin: 0;
+  color: #c7dddd;
+  line-height: 1.6;
+}
+
+.audio-card audio {
+  width: 100%;
+}
+
+.manager-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.manager-actions button {
+  padding: 11px 18px;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.manager-actions button:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
+
+.approve-button {
+  background: #168f63;
+}
+
+.edit-button {
+  background: #2468c9;
+}
+
+.reject-button {
+  background: #c73b3b;
+}
+
 @media (max-width: 900px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -262,6 +385,10 @@ button {
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 560px) {
@@ -270,7 +397,8 @@ button {
   }
 
   .page-header,
-  .panel-header {
+  .panel-header,
+  .detail-header {
     align-items: stretch;
     flex-direction: column;
   }
@@ -289,5 +417,17 @@ button {
 
   .ticket-header {
     display: none;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .manager-actions {
+    flex-direction: column;
+  }
+
+  .manager-actions button {
+    width: 100%;
   }
 }
