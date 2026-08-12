@@ -18,6 +18,14 @@ function App() {
   const [actionLoading, setActionLoading] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
 
+  const [isEditing, setIsEditing] = useState(false)
+  const [editLocation, setEditLocation] = useState('')
+  const [editEquipment, setEditEquipment] = useState('')
+  const [editAssignedTo, setEditAssignedTo] = useState('')
+  const [editStatus, setEditStatus] =
+    useState<Ticket['status']>('Open')
+  const [editIssueSummary, setEditIssueSummary] = useState('')
+
   useEffect(() => {
     async function loadTickets() {
       try {
@@ -62,6 +70,7 @@ function App() {
       setDetailLoading(true)
       setError(null)
       setActionMessage(null)
+      setIsEditing(false)
       setSelectedTicket(null)
       setView('detail')
 
@@ -121,9 +130,79 @@ function App() {
     }
   }
 
+  function handleEdit() {
+    if (!selectedTicket) {
+      return
+    }
+
+    setActionMessage(null)
+
+    setEditLocation(selectedTicket.location ?? '')
+    setEditEquipment(selectedTicket.equipment ?? '')
+    setEditAssignedTo(selectedTicket.assigned_to ?? '')
+    setEditStatus(selectedTicket.status)
+    setEditIssueSummary(selectedTicket.issue_summary ?? '')
+
+    setIsEditing(true)
+  }
+
+  function handleCancelEdit() {
+    setIsEditing(false)
+  }
+
+  async function handleSaveEdit() {
+    if (!selectedTicket) {
+      return
+    }
+
+    const confirmed = window.confirm(
+      'Are you sure you want to save these changes?'
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    try {
+      setActionLoading(true)
+      setError(null)
+      setActionMessage(null)
+
+      const updatedTicket = await updateTicket(
+        selectedTicket.ticket_id,
+        {
+          location: editLocation.trim() || null,
+          equipment: editEquipment.trim() || null,
+          assigned_to: editAssignedTo.trim() || null,
+          status: editStatus,
+          issue_summary: editIssueSummary.trim() || null,
+        }
+      )
+
+      setSelectedTicket(updatedTicket)
+
+      setTickets((currentTickets) =>
+        currentTickets.map((ticket) =>
+          ticket.ticket_id === updatedTicket.ticket_id
+            ? updatedTicket
+            : ticket
+        )
+      )
+
+      setIsEditing(false)
+      setActionMessage('Ticket updated successfully.')
+    } catch (err) {
+      console.error(err)
+      setError('Could not update ticket.')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   function handleBackToTickets() {
     setSelectedTicket(null)
     setActionMessage(null)
+    setIsEditing(false)
     setView('list')
   }
 
@@ -362,39 +441,104 @@ function App() {
                   <div className="detail-card">
                     <span>Location</span>
 
-                    <strong>
-                      {selectedTicket.location ??
-                        `Unit ${
-                          selectedTicket.unit_code ??
-                          'N/A'
-                        }`}
-                    </strong>
+                    {isEditing ? (
+                      <input
+                        className="edit-input"
+                        value={editLocation}
+                        placeholder="Enter location"
+                        onChange={(event) =>
+                          setEditLocation(event.target.value)
+                        }
+                      />
+                    ) : (
+                      <strong>
+                        {selectedTicket.location ??
+                          `Unit ${
+                            selectedTicket.unit_code ??
+                            'N/A'
+                          }`}
+                      </strong>
+                    )}
                   </div>
 
                   <div className="detail-card">
                     <span>Equipment</span>
 
-                    <strong>
-                      {selectedTicket.equipment ??
-                        'Not classified'}
-                    </strong>
+                    {isEditing ? (
+                      <input
+                        className="edit-input"
+                        value={editEquipment}
+                        placeholder="Enter equipment"
+                        onChange={(event) =>
+                          setEditEquipment(event.target.value)
+                        }
+                      />
+                    ) : (
+                      <strong>
+                        {selectedTicket.equipment ??
+                          'Not classified'}
+                      </strong>
+                    )}
                   </div>
 
                   <div className="detail-card">
                     <span>Status</span>
 
-                    <strong>
-                      {selectedTicket.status}
-                    </strong>
+                    {isEditing ? (
+                      <select
+                        className="edit-input"
+                        value={editStatus}
+                        onChange={(event) =>
+                          setEditStatus(
+                            event.target.value as Ticket['status']
+                          )
+                        }
+                      >
+                        <option value="Processing">
+                          Processing
+                        </option>
+
+                        <option value="Pending Review">
+                          Pending Review
+                        </option>
+
+                        <option value="Open">
+                          Open
+                        </option>
+
+                        <option value="In Progress">
+                          In Progress
+                        </option>
+
+                        <option value="Resolved">
+                          Resolved
+                        </option>
+                      </select>
+                    ) : (
+                      <strong>
+                        {selectedTicket.status}
+                      </strong>
+                    )}
                   </div>
 
                   <div className="detail-card">
                     <span>Assigned To</span>
 
-                    <strong>
-                      {selectedTicket.assigned_to ??
-                        'Not assigned'}
-                    </strong>
+                    {isEditing ? (
+                      <input
+                        className="edit-input"
+                        value={editAssignedTo}
+                        placeholder="Assign to"
+                        onChange={(event) =>
+                          setEditAssignedTo(event.target.value)
+                        }
+                      />
+                    ) : (
+                      <strong>
+                        {selectedTicket.assigned_to ??
+                          'Not assigned'}
+                      </strong>
+                    )}
                   </div>
 
                   <div className="detail-card">
@@ -436,10 +580,23 @@ function App() {
                 <div className="transcript-card">
                   <h4>Issue Summary</h4>
 
-                  <p>
-                    {selectedTicket.issue_summary ??
-                      'No issue summary available.'}
-                  </p>
+                  {isEditing ? (
+                    <textarea
+                      className="edit-textarea"
+                      value={editIssueSummary}
+                      placeholder="Enter issue summary"
+                      onChange={(event) =>
+                        setEditIssueSummary(
+                          event.target.value
+                        )
+                      }
+                    />
+                  ) : (
+                    <p>
+                      {selectedTicket.issue_summary ??
+                        'No issue summary available.'}
+                    </p>
+                  )}
                 </div>
 
                 <div className="audio-card">
@@ -460,23 +617,50 @@ function App() {
                 )}
 
                 <div className="manager-actions">
-                  <button
-                    className="approve-button"
-                    onClick={handleApprove}
-                    disabled={actionLoading}
-                  >
-                    {actionLoading
-                      ? 'Approving...'
-                      : 'Approve'}
-                  </button>
+                  {isEditing ? (
+                    <>
+                      <button
+                        className="approve-button"
+                        onClick={handleSaveEdit}
+                        disabled={actionLoading}
+                      >
+                        {actionLoading
+                          ? 'Saving...'
+                          : 'Save Changes'}
+                      </button>
 
-                  <button className="edit-button">
-                    Edit
-                  </button>
+                      <button
+                        className="edit-button"
+                        onClick={handleCancelEdit}
+                        disabled={actionLoading}
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        className="approve-button"
+                        onClick={handleApprove}
+                        disabled={actionLoading}
+                      >
+                        {actionLoading
+                          ? 'Approving...'
+                          : 'Approve'}
+                      </button>
 
-                  <button className="reject-button">
-                    Reject
-                  </button>
+                      <button
+                        className="edit-button"
+                        onClick={handleEdit}
+                      >
+                        Edit
+                      </button>
+
+                      <button className="reject-button">
+                        Reject
+                      </button>
+                    </>
+                  )}
                 </div>
               </section>
             )}
