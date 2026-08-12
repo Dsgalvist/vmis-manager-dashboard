@@ -3,7 +3,8 @@ export type TicketStatus =
   | "Pending Review"
   | "Open"
   | "In Progress"
-  | "Resolved";
+  | "Resolved"
+  | "Rejected";
 
 export interface Ticket {
   id: string;
@@ -15,6 +16,7 @@ export interface Ticket {
 
   audio_url: string;
   transcript: string;
+  transcript_cloud: string | null;
 
   unit_code: string | null;
 

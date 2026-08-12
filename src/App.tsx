@@ -18,6 +18,9 @@ function App() {
   const [detailOrigin, setDetailOrigin] =
     useState<'list' | 'history'>('list')
   const [actionLoading, setActionLoading] = useState(false)
+  const [activeAction, setActiveAction] = useState<
+    'approve' | 'reject' | 'resolve' | null
+  >(null)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
 
   const [isEditing, setIsEditing] = useState(false)
@@ -58,10 +61,8 @@ function App() {
     (ticket) => ticket.status === 'Open'
   ).length
 
-  const inProgressCount = tickets.filter(
-    (ticket) =>
-      ticket.status === 'In Progress' ||
-      ticket.status === 'Processing'
+  const rejectedCount = tickets.filter(
+    (ticket) => ticket.status === 'Rejected'
   ).length
 
   const resolvedCount = tickets.filter(
@@ -81,8 +82,10 @@ function App() {
             (ticket) => ticket.status === statusFilter
           )
 
-  const resolvedTickets = tickets.filter(
-    (ticket) => ticket.status === 'Resolved'
+  const historyTickets = tickets.filter(
+    (ticket) =>
+      ticket.status === 'Resolved' ||
+      ticket.status === 'Rejected'
   )
 
   async function handleSelectTicket(
@@ -124,6 +127,7 @@ function App() {
 
     try {
       setActionLoading(true)
+      setActiveAction('approve')
       setError(null)
       setActionMessage(null)
 
@@ -151,6 +155,7 @@ function App() {
       setError('Could not approve ticket.')
     } finally {
       setActionLoading(false)
+      setActiveAction(null)
     }
   }
 
@@ -162,20 +167,26 @@ function App() {
     const confirmed = window.confirm(
       'Are you sure you want to reject this ticket?'
     )
+
     if (!confirmed) {
       return
     }
+
     try {
       setActionLoading(true)
+      setActiveAction('reject')
       setError(null)
       setActionMessage(null)
+
       const updatedTicket = await updateTicket(
         selectedTicket.ticket_id,
         {
           status: 'Rejected',
         }
       )
+
       setSelectedTicket(updatedTicket)
+
       setTickets((currentTickets) =>
         currentTickets.map((ticket) =>
           ticket.ticket_id === updatedTicket.ticket_id
@@ -183,12 +194,14 @@ function App() {
             : ticket
         )
       )
+
       setActionMessage('Ticket rejected.')
     } catch (err) {
       console.error(err)
       setError('Could not reject ticket.')
     } finally {
       setActionLoading(false)
+      setActiveAction(null)
     }
   }
 
@@ -196,23 +209,30 @@ function App() {
     if (!selectedTicket) {
       return
     }
+
     const confirmed = window.confirm(
       'Mark this ticket as resolved?'
     )
+
     if (!confirmed) {
       return
     }
+
     try {
       setActionLoading(true)
+      setActiveAction('resolve')
       setError(null)
       setActionMessage(null)
+
       const updatedTicket = await updateTicket(
         selectedTicket.ticket_id,
         {
           status: 'Resolved',
         }
       )
+
       setSelectedTicket(updatedTicket)
+
       setTickets((currentTickets) =>
         currentTickets.map((ticket) =>
           ticket.ticket_id === updatedTicket.ticket_id
@@ -220,12 +240,14 @@ function App() {
             : ticket
         )
       )
+
       setActionMessage('Ticket marked resolved.')
     } catch (err) {
       console.error(err)
       setError('Could not resolve ticket.')
     } finally {
       setActionLoading(false)
+      setActiveAction(null)
     }
   }
 
@@ -402,8 +424,8 @@ function App() {
               </article>
 
               <article className="stat-card">
-                <span>In Progress</span>
-                <strong>{inProgressCount}</strong>
+                <span>Rejected</span>
+                <strong>{rejectedCount}</strong>
               </article>
 
               <article className="stat-card">
@@ -443,6 +465,10 @@ function App() {
 
                   <option value="Resolved">
                     Resolved
+                  </option>
+
+                  <option value="Rejected">
+                    Rejected
                   </option>
                 </select>
               </div>
@@ -553,9 +579,9 @@ function App() {
             <section className="tickets-panel">
               <div className="panel-header">
                 <div>
-                  <h3>Resolved Tickets</h3>
+                  <h3>Closed Tickets</h3>
                   <p>
-                    Review completed maintenance requests.
+                    Review completed and rejected maintenance requests.
                   </p>
                 </div>
               </div>
@@ -574,15 +600,15 @@ function App() {
 
               {!loading &&
                 !error &&
-                resolvedTickets.length === 0 && (
+                historyTickets.length === 0 && (
                   <div className="empty-state">
-                    <h4>No resolved tickets available</h4>
+                    <h4>No closed tickets available</h4>
                   </div>
                 )}
 
               {!loading &&
                 !error &&
-                resolvedTickets.length > 0 && (
+                historyTickets.length > 0 && (
                   <div className="ticket-table">
                     <div className="ticket-row ticket-header">
                       <span>Ticket</span>
@@ -592,7 +618,7 @@ function App() {
                       <span>Created</span>
                     </div>
 
-                    {resolvedTickets.map((ticket) => (
+                    {historyTickets.map((ticket) => (
                       <div
                         className="ticket-row clickable"
                         key={ticket.ticket_id}
@@ -870,11 +896,13 @@ function App() {
 
                 <div className="transcript-card">
                   <h4>Cloud Transcript</h4>
+
                   <p>
                     {selectedTicket.transcript_cloud ||
                       'No cloud transcript available.'}
                   </p>
                 </div>
+
                 <div className="transcript-card">
                   <h4>Issue Summary</h4>
 
@@ -945,7 +973,7 @@ function App() {
                           onClick={handleApprove}
                           disabled={actionLoading}
                         >
-                          {actionLoading
+                          {activeAction === 'approve'
                             ? 'Approving...'
                             : 'Approve'}
                         </button>
@@ -954,24 +982,33 @@ function App() {
                       <button
                         className="edit-button"
                         onClick={handleEdit}
+                        disabled={actionLoading}
                       >
                         Edit
                       </button>
 
-                      {selectedTicket.status !== 'Resolved' && (
-                        <button className="reject-button" onClick={handleReject} disabled={actionLoading}>
-                          Reject
-                        </button>
-                    )}
-                      {selectedTicket.status === "Open" && (
+                      {selectedTicket.status !== 'Resolved' &&
+                        selectedTicket.status !== 'Rejected' && (
+                          <button
+                            className="reject-button"
+                            onClick={handleReject}
+                            disabled={actionLoading}
+                          >
+                            {activeAction === 'reject'
+                              ? 'Rejecting...'
+                              : 'Reject'}
+                          </button>
+                        )}
+
+                      {selectedTicket.status === 'Open' && (
                         <button
                           className="approve-button"
                           onClick={handleResolve}
                           disabled={actionLoading}
                         >
-                          {actionLoading
-                            ? "Resolving..."
-                            : "Mark Resolved"}
+                          {activeAction === 'resolve'
+                            ? 'Resolving...'
+                            : 'Mark Resolved'}
                         </button>
                       )}
                     </>
@@ -987,4 +1024,3 @@ function App() {
 }
 
 export default App
-
