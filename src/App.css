@@ -510,3 +510,14 @@ select:focus-visible,
     width: 100%;
   }
 }
+
+.action-message {
+  margin-top: 20px;
+  padding: 12px 16px;
+  border: 1px solid #14527f;
+  border-radius: 8px;
+  color: #ffffff;
+  background: #131315;
+  font-size: 14px;
+  font-weight: 800;
+}

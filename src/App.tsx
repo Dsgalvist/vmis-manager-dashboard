@@ -3,6 +3,7 @@ import './App.css'
 import {
   getTickets,
   getTicketById,
+  updateTicket,
 } from './services/api'
 import type { Ticket } from './types/Ticket'
 
@@ -14,6 +15,8 @@ function App() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [statusFilter, setStatusFilter] = useState('All')
   const [view, setView] = useState<'list' | 'detail'>('list')
+  const [actionLoading, setActionLoading] = useState(false)
+  const [actionMessage, setActionMessage] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadTickets() {
@@ -58,6 +61,7 @@ function App() {
     try {
       setDetailLoading(true)
       setError(null)
+      setActionMessage(null)
       setSelectedTicket(null)
       setView('detail')
 
@@ -72,8 +76,54 @@ function App() {
     }
   }
 
+  async function handleApprove() {
+    if (!selectedTicket) {
+      return
+    }
+
+    const confirmed = window.confirm(
+      'Are you sure you want to approve this ticket?'
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    try {
+      setActionLoading(true)
+      setError(null)
+      setActionMessage(null)
+
+      const updatedTicket = await updateTicket(
+        selectedTicket.ticket_id,
+        {
+          status: 'Open',
+          requires_human_review: false,
+        }
+      )
+
+      setSelectedTicket(updatedTicket)
+
+      setTickets((currentTickets) =>
+        currentTickets.map((ticket) =>
+          ticket.ticket_id === updatedTicket.ticket_id
+            ? updatedTicket
+            : ticket
+        )
+      )
+
+      setActionMessage('Ticket approved successfully.')
+    } catch (err) {
+      console.error(err)
+      setError('Could not approve ticket.')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   function handleBackToTickets() {
     setSelectedTicket(null)
+    setActionMessage(null)
     setView('list')
   }
 
@@ -403,9 +453,21 @@ function App() {
                   </audio>
                 </div>
 
+                {actionMessage && (
+                  <div className="action-message">
+                    {actionMessage}
+                  </div>
+                )}
+
                 <div className="manager-actions">
-                  <button className="approve-button">
-                    Approve
+                  <button
+                    className="approve-button"
+                    onClick={handleApprove}
+                    disabled={actionLoading}
+                  >
+                    {actionLoading
+                      ? 'Approving...'
+                      : 'Approve'}
                   </button>
 
                   <button className="edit-button">
