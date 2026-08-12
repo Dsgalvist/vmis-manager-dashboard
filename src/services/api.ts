@@ -1,17 +1,23 @@
-import type { Ticket } from '../types/Ticket'
+import type { Ticket } from "../types/Ticket";
 
-const API_BASE_URL = '/api'
+const API_BASE_URL = "/api";
 
 export async function getTickets(): Promise<Ticket[]> {
-  const response = await fetch(`${API_BASE_URL}/tickets`)
+  const response = await fetch(`${API_BASE_URL}/tickets`);
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch tickets. Status: ${response.status}`
-    )
+    throw new Error(`Failed to fetch tickets. Status: ${response.status}`);
   }
 
-  const data: Ticket[] = await response.json()
+  return response.json();
+}
 
-  return data
+export async function getTicketById(ticketId: string): Promise<Ticket> {
+  const response = await fetch(`${API_BASE_URL}/tickets/${ticketId}`);
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ticket. Status: ${response.status}`);
+  }
+
+  return response.json();
 }

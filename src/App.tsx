@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import './App.css'
-import { getTickets } from './services/api'
+import {
+  getTickets,
+  getTicketById,
+} from './services/api'
 import type { Ticket } from './types/Ticket'
 
 function App() {
@@ -8,6 +11,8 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [statusFilter, setStatusFilter] = useState('All')
 
   useEffect(() => {
     async function loadTickets() {
@@ -40,6 +45,29 @@ function App() {
   const resolvedCount = tickets.filter(
     (ticket) => ticket.status === 'Resolved'
   ).length
+
+  const filteredTickets =
+    statusFilter === 'All'
+      ? tickets
+      : tickets.filter(
+          (ticket) => ticket.status === statusFilter
+        )
+
+  async function handleSelectTicket(ticketId: string) {
+    try {
+      setDetailLoading(true)
+      setError(null)
+
+      const ticket = await getTicketById(ticketId)
+
+      setSelectedTicket(ticket)
+    } catch (err) {
+      console.error(err)
+      setError('Could not load ticket details.')
+    } finally {
+      setDetailLoading(false)
+    }
+  }
 
   return (
     <div className="app-shell">
@@ -110,12 +138,23 @@ function App() {
               </p>
             </div>
 
-            <select defaultValue="All">
-              <option>All</option>
-              <option>Pending Review</option>
-              <option>Open</option>
-              <option>In Progress</option>
-              <option>Resolved</option>
+            <select
+              value={statusFilter}
+              onChange={(event) =>
+                setStatusFilter(event.target.value)
+              }
+            >
+              <option value="All">All</option>
+              <option value="Pending Review">
+                Pending Review
+              </option>
+              <option value="Open">Open</option>
+              <option value="In Progress">
+                In Progress
+              </option>
+              <option value="Resolved">
+                Resolved
+              </option>
             </select>
           </div>
 
@@ -125,7 +164,7 @@ function App() {
             </div>
           )}
 
-          {error && (
+          {error && !detailLoading && (
             <div className="empty-state">
               <h4>{error}</h4>
             </div>
@@ -137,51 +176,77 @@ function App() {
             </div>
           )}
 
-          {!loading && !error && tickets.length > 0 && (
-            <div className="ticket-table">
-              <div className="ticket-row ticket-header">
-                <span>Ticket</span>
-                <span>Location</span>
-                <span>Equipment</span>
-                <span>Status</span>
-                <span>Created</span>
+          {!loading &&
+            !error &&
+            tickets.length > 0 &&
+            filteredTickets.length === 0 && (
+              <div className="empty-state">
+                <h4>
+                  No tickets found for this status
+                </h4>
               </div>
+            )}
 
-              {tickets.map((ticket) => (
-                <div
-                  className="ticket-row clickable"
-                  key={ticket.ticket_id}
-                  onClick={() => setSelectedTicket(ticket)}
-                >
-                  <span>
-                    {ticket.ticket_id.slice(0, 8)}
-                  </span>
-
-                  <span>
-                    {ticket.location ??
-                      `Unit ${ticket.unit_code ?? 'N/A'}`}
-                  </span>
-
-                  <span>
-                    {ticket.equipment ?? 'Not classified'}
-                  </span>
-
-                  <span>
-                    {ticket.status}
-                  </span>
-
-                  <span>
-                    {new Date(
-                      ticket.created_at
-                    ).toLocaleString()}
-                  </span>
+          {!loading &&
+            !error &&
+            filteredTickets.length > 0 && (
+              <div className="ticket-table">
+                <div className="ticket-row ticket-header">
+                  <span>Ticket</span>
+                  <span>Location</span>
+                  <span>Equipment</span>
+                  <span>Status</span>
+                  <span>Created</span>
                 </div>
-              ))}
-            </div>
-          )}
+
+                {filteredTickets.map((ticket) => (
+                  <div
+                    className="ticket-row clickable"
+                    key={ticket.ticket_id}
+                    onClick={() =>
+                      handleSelectTicket(ticket.ticket_id)
+                    }
+                  >
+                    <span>
+                      {ticket.ticket_id.slice(0, 8)}
+                    </span>
+
+                    <span>
+                      {ticket.location ??
+                        `Unit ${
+                          ticket.unit_code ?? 'N/A'
+                        }`}
+                    </span>
+
+                    <span>
+                      {ticket.equipment ??
+                        'Not classified'}
+                    </span>
+
+                    <span>
+                      {ticket.status}
+                    </span>
+
+                    <span>
+                      {new Date(
+                        ticket.created_at
+                      ).toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
         </section>
 
-        {selectedTicket && (
+        {detailLoading && (
+          <section className="ticket-detail">
+            <div className="empty-state">
+              <h4>Loading ticket details...</h4>
+            </div>
+          </section>
+        )}
+
+        {selectedTicket && !detailLoading && (
           <section className="ticket-detail">
             <div className="detail-header">
               <div>
@@ -196,7 +261,9 @@ function App() {
 
               <button
                 className="close-button"
-                onClick={() => setSelectedTicket(null)}
+                onClick={() =>
+                  setSelectedTicket(null)
+                }
               >
                 Close
               </button>
@@ -209,7 +276,8 @@ function App() {
                 <strong>
                   {selectedTicket.location ??
                     `Unit ${
-                      selectedTicket.unit_code ?? 'N/A'
+                      selectedTicket.unit_code ??
+                      'N/A'
                     }`}
                 </strong>
               </div>
@@ -246,7 +314,8 @@ function App() {
                 <strong>
                   {selectedTicket.confidence !== null
                     ? `${Math.round(
-                        selectedTicket.confidence * 100
+                        selectedTicket.confidence *
+                          100
                       )}%`
                     : 'Not available'}
                 </strong>
