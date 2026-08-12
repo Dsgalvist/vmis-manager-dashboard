@@ -380,6 +380,7 @@ button {
 
 .audio-card audio {
   width: 100%;
+  border-radius: 8px;
 }
 
 /* Actions */
@@ -391,33 +392,47 @@ button {
 }
 
 .manager-actions button {
-  min-width: 110px;
+  min-width: 120px;
   padding: 11px 18px;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .approve-button {
-  color: #0a0a0b;
-  background: #f2b705;
+  color: #ffffff;
+  background: #14527f;
+  border: 1px solid #14527f;
+}
+
+.approve-button:hover {
+  background: #0f4166;
+  border-color: #0f4166;
 }
 
 .edit-button {
   color: #ffffff;
   background: #131315;
-  border: 1px solid #1c6aa8;
+  border: 1px solid #f5f4f0;
+}
+
+.edit-button:hover {
+  background: #2b2b2b;
 }
 
 .reject-button {
   color: #ffffff;
-  background: #131315;
-  border: 1px solid #ffffff;
+  background: #8f1d1d;
+  border: 1px solid #8f1d1d;
 }
 
-.manager-actions button:hover {
-  filter: brightness(1.08);
+.reject-button:hover {
+  background: #a32626;
+  border-color: #a32626;
 }
 
 /* Accessibility */
