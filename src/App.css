@@ -539,3 +539,11 @@ select:focus-visible,
   font-size: 14px;
   font-weight: 800;
 }
+
+.input-error {
+  display: block;
+  margin-top: 6px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 400;
+}

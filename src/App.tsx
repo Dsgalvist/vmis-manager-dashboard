@@ -14,7 +14,9 @@ function App() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [statusFilter, setStatusFilter] = useState('All')
-  const [view, setView] = useState<'list' | 'detail'>('list')
+  const [view, setView] = useState<'list' | 'history' | 'detail'>('list')
+  const [detailOrigin, setDetailOrigin] =
+    useState<'list' | 'history'>('list')
   const [actionLoading, setActionLoading] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
 
@@ -25,6 +27,12 @@ function App() {
   const [editStatus, setEditStatus] =
     useState<Ticket['status']>('Open')
   const [editIssueSummary, setEditIssueSummary] = useState('')
+
+  const [locationError, setLocationError] = useState(false)
+  const [equipmentError, setEquipmentError] = useState(false)
+  const [assignedToError, setAssignedToError] = useState(false)
+
+  const allowedTextPattern = /^[a-zA-Z0-9\s.#-]*$/
 
   useEffect(() => {
     async function loadTickets() {
@@ -51,7 +59,9 @@ function App() {
   ).length
 
   const inProgressCount = tickets.filter(
-    (ticket) => ticket.status === 'In Progress'
+    (ticket) =>
+      ticket.status === 'In Progress' ||
+      ticket.status === 'Processing'
   ).length
 
   const resolvedCount = tickets.filter(
@@ -61,17 +71,31 @@ function App() {
   const filteredTickets =
     statusFilter === 'All'
       ? tickets
-      : tickets.filter(
-          (ticket) => ticket.status === statusFilter
-        )
+      : statusFilter === 'In Progress'
+        ? tickets.filter(
+            (ticket) =>
+              ticket.status === 'In Progress' ||
+              ticket.status === 'Processing'
+          )
+        : tickets.filter(
+            (ticket) => ticket.status === statusFilter
+          )
 
-  async function handleSelectTicket(ticketId: string) {
+  const resolvedTickets = tickets.filter(
+    (ticket) => ticket.status === 'Resolved'
+  )
+
+  async function handleSelectTicket(
+    ticketId: string,
+    origin: 'list' | 'history' = 'list'
+  ) {
     try {
       setDetailLoading(true)
       setError(null)
       setActionMessage(null)
       setIsEditing(false)
       setSelectedTicket(null)
+      setDetailOrigin(origin)
       setView('detail')
 
       const ticket = await getTicketById(ticketId)
@@ -137,7 +161,16 @@ function App() {
 
     setActionMessage(null)
 
-    setEditLocation(selectedTicket.location ?? '')
+    setLocationError(false)
+    setEquipmentError(false)
+    setAssignedToError(false)
+
+    setEditLocation(
+      selectedTicket.location ??
+        (selectedTicket.unit_code
+          ? `Unit ${selectedTicket.unit_code}`
+          : '')
+    )
     setEditEquipment(selectedTicket.equipment ?? '')
     setEditAssignedTo(selectedTicket.assigned_to ?? '')
     setEditStatus(selectedTicket.status)
@@ -147,11 +180,25 @@ function App() {
   }
 
   function handleCancelEdit() {
+    setLocationError(false)
+    setEquipmentError(false)
+    setAssignedToError(false)
     setIsEditing(false)
   }
 
   async function handleSaveEdit() {
     if (!selectedTicket) {
+      return
+    }
+
+    if (
+      !allowedTextPattern.test(editLocation) ||
+      !allowedTextPattern.test(editEquipment) ||
+      !allowedTextPattern.test(editAssignedTo)
+    ) {
+      setActionMessage(
+        'Location, Equipment, and Assigned To contain invalid characters.'
+      )
       return
     }
 
@@ -189,6 +236,9 @@ function App() {
         )
       )
 
+      setLocationError(false)
+      setEquipmentError(false)
+      setAssignedToError(false)
       setIsEditing(false)
       setActionMessage('Ticket updated successfully.')
     } catch (err) {
@@ -202,8 +252,11 @@ function App() {
   function handleBackToTickets() {
     setSelectedTicket(null)
     setActionMessage(null)
+    setLocationError(false)
+    setEquipmentError(false)
+    setAssignedToError(false)
     setIsEditing(false)
-    setView('list')
+    setView(detailOrigin)
   }
 
   return (
@@ -219,11 +272,27 @@ function App() {
         </div>
 
         <nav className="nav-menu">
-          <button className="nav-item active">
+          <button
+            className={`nav-item ${
+              view === 'list' ||
+              (view === 'detail' && detailOrigin === 'list')
+                ? 'active'
+                : ''
+            }`}
+            onClick={() => setView('list')}
+          >
             Tickets
           </button>
 
-          <button className="nav-item">
+          <button
+            className={`nav-item ${
+              view === 'history' ||
+              (view === 'detail' && detailOrigin === 'history')
+                ? 'active'
+                : ''
+            }`}
+            onClick={() => setView('history')}
+          >
             History
           </button>
         </nav>
@@ -352,7 +421,110 @@ function App() {
                         key={ticket.ticket_id}
                         onClick={() =>
                           handleSelectTicket(
-                            ticket.ticket_id
+                            ticket.ticket_id,
+                            'list'
+                          )
+                        }
+                      >
+                        <span>
+                          {ticket.ticket_id.slice(0, 8)}
+                        </span>
+
+                        <span>
+                          {ticket.location ??
+                            `Unit ${
+                              ticket.unit_code ?? 'N/A'
+                            }`}
+                        </span>
+
+                        <span>
+                          {ticket.equipment ??
+                            'Not classified'}
+                        </span>
+
+                        <span>
+                          {ticket.status}
+                        </span>
+
+                        <span>
+                          {new Date(
+                            ticket.created_at
+                          ).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+            </section>
+          </>
+        )}
+
+        {view === 'history' && (
+          <>
+            <header className="page-header">
+              <div>
+                <p className="eyebrow">
+                  Voice Maintenance Intake Station
+                </p>
+
+                <h2>Ticket History</h2>
+              </div>
+
+              <div className="header-badge">
+                Manager View
+              </div>
+            </header>
+
+            <section className="tickets-panel">
+              <div className="panel-header">
+                <div>
+                  <h3>Resolved Tickets</h3>
+                  <p>
+                    Review completed maintenance requests.
+                  </p>
+                </div>
+              </div>
+
+              {loading && (
+                <div className="empty-state">
+                  <h4>Loading tickets...</h4>
+                </div>
+              )}
+
+              {error && (
+                <div className="empty-state">
+                  <h4>{error}</h4>
+                </div>
+              )}
+
+              {!loading &&
+                !error &&
+                resolvedTickets.length === 0 && (
+                  <div className="empty-state">
+                    <h4>No resolved tickets available</h4>
+                  </div>
+                )}
+
+              {!loading &&
+                !error &&
+                resolvedTickets.length > 0 && (
+                  <div className="ticket-table">
+                    <div className="ticket-row ticket-header">
+                      <span>Ticket</span>
+                      <span>Location</span>
+                      <span>Equipment</span>
+                      <span>Status</span>
+                      <span>Created</span>
+                    </div>
+
+                    {resolvedTickets.map((ticket) => (
+                      <div
+                        className="ticket-row clickable"
+                        key={ticket.ticket_id}
+                        onClick={() =>
+                          handleSelectTicket(
+                            ticket.ticket_id,
+                            'history'
                           )
                         }
                       >
@@ -433,7 +605,10 @@ function App() {
                     className="close-button"
                     onClick={handleBackToTickets}
                   >
-                    ← Back to Tickets
+                    ← Back to{' '}
+                    {detailOrigin === 'history'
+                      ? 'History'
+                      : 'Tickets'}
                   </button>
                 </div>
 
@@ -442,14 +617,29 @@ function App() {
                     <span>Location</span>
 
                     {isEditing ? (
-                      <input
-                        className="edit-input"
-                        value={editLocation}
-                        placeholder="Enter location"
-                        onChange={(event) =>
-                          setEditLocation(event.target.value)
-                        }
-                      />
+                      <>
+                        <input
+                          className="edit-input"
+                          value={editLocation}
+                          placeholder="Enter location"
+                          onChange={(event) => {
+                            const value = event.target.value
+
+                            if (allowedTextPattern.test(value)) {
+                              setEditLocation(value)
+                              setLocationError(false)
+                            } else {
+                              setLocationError(true)
+                            }
+                          }}
+                        />
+
+                        {locationError && (
+                          <span className="input-error">
+                            Invalid character.
+                          </span>
+                        )}
+                      </>
                     ) : (
                       <strong>
                         {selectedTicket.location ??
@@ -465,14 +655,29 @@ function App() {
                     <span>Equipment</span>
 
                     {isEditing ? (
-                      <input
-                        className="edit-input"
-                        value={editEquipment}
-                        placeholder="Enter equipment"
-                        onChange={(event) =>
-                          setEditEquipment(event.target.value)
-                        }
-                      />
+                      <>
+                        <input
+                          className="edit-input"
+                          value={editEquipment}
+                          placeholder="Enter equipment"
+                          onChange={(event) => {
+                            const value = event.target.value
+
+                            if (allowedTextPattern.test(value)) {
+                              setEditEquipment(value)
+                              setEquipmentError(false)
+                            } else {
+                              setEquipmentError(true)
+                            }
+                          }}
+                        />
+
+                        {equipmentError && (
+                          <span className="input-error">
+                            Invalid character.
+                          </span>
+                        )}
+                      </>
                     ) : (
                       <strong>
                         {selectedTicket.equipment ??
@@ -494,10 +699,6 @@ function App() {
                           )
                         }
                       >
-                        <option value="Processing">
-                          Processing
-                        </option>
-
                         <option value="Pending Review">
                           Pending Review
                         </option>
@@ -525,14 +726,29 @@ function App() {
                     <span>Assigned To</span>
 
                     {isEditing ? (
-                      <input
-                        className="edit-input"
-                        value={editAssignedTo}
-                        placeholder="Assign to"
-                        onChange={(event) =>
-                          setEditAssignedTo(event.target.value)
-                        }
-                      />
+                      <>
+                        <input
+                          className="edit-input"
+                          value={editAssignedTo}
+                          placeholder="Assign to"
+                          onChange={(event) => {
+                            const value = event.target.value
+
+                            if (allowedTextPattern.test(value)) {
+                              setEditAssignedTo(value)
+                              setAssignedToError(false)
+                            } else {
+                              setAssignedToError(true)
+                            }
+                          }}
+                        />
+
+                        {assignedToError && (
+                          <span className="input-error">
+                            Invalid character.
+                          </span>
+                        )}
+                      </>
                     ) : (
                       <strong>
                         {selectedTicket.assigned_to ??
@@ -639,15 +855,19 @@ function App() {
                     </>
                   ) : (
                     <>
-                      <button
-                        className="approve-button"
-                        onClick={handleApprove}
-                        disabled={actionLoading}
-                      >
-                        {actionLoading
-                          ? 'Approving...'
-                          : 'Approve'}
-                      </button>
+                      {(selectedTicket.status === 'Pending Review' ||
+                        selectedTicket.status === 'Processing' ||
+                        selectedTicket.status === 'In Progress') && (
+                        <button
+                          className="approve-button"
+                          onClick={handleApprove}
+                          disabled={actionLoading}
+                        >
+                          {actionLoading
+                            ? 'Approving...'
+                            : 'Approve'}
+                        </button>
+                      )}
 
                       <button
                         className="edit-button"
@@ -656,9 +876,11 @@ function App() {
                         Edit
                       </button>
 
-                      <button className="reject-button">
-                        Reject
-                      </button>
+                      {selectedTicket.status !== 'Resolved' && (
+                        <button className="reject-button">
+                          Reject
+                        </button>
+                    )}
                     </>
                   )}
                 </div>
