@@ -154,6 +154,81 @@ function App() {
     }
   }
 
+  async function handleReject() {
+    if (!selectedTicket) {
+      return
+    }
+
+    const confirmed = window.confirm(
+      'Are you sure you want to reject this ticket?'
+    )
+    if (!confirmed) {
+      return
+    }
+    try {
+      setActionLoading(true)
+      setError(null)
+      setActionMessage(null)
+      const updatedTicket = await updateTicket(
+        selectedTicket.ticket_id,
+        {
+          status: 'Rejected',
+        }
+      )
+      setSelectedTicket(updatedTicket)
+      setTickets((currentTickets) =>
+        currentTickets.map((ticket) =>
+          ticket.ticket_id === updatedTicket.ticket_id
+            ? updatedTicket
+            : ticket
+        )
+      )
+      setActionMessage('Ticket rejected.')
+    } catch (err) {
+      console.error(err)
+      setError('Could not reject ticket.')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  async function handleResolve() {
+    if (!selectedTicket) {
+      return
+    }
+    const confirmed = window.confirm(
+      'Mark this ticket as resolved?'
+    )
+    if (!confirmed) {
+      return
+    }
+    try {
+      setActionLoading(true)
+      setError(null)
+      setActionMessage(null)
+      const updatedTicket = await updateTicket(
+        selectedTicket.ticket_id,
+        {
+          status: 'Resolved',
+        }
+      )
+      setSelectedTicket(updatedTicket)
+      setTickets((currentTickets) =>
+        currentTickets.map((ticket) =>
+          ticket.ticket_id === updatedTicket.ticket_id
+            ? updatedTicket
+            : ticket
+        )
+      )
+      setActionMessage('Ticket marked resolved.')
+    } catch (err) {
+      console.error(err)
+      setError('Could not resolve ticket.')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   function handleEdit() {
     if (!selectedTicket) {
       return
@@ -794,6 +869,13 @@ function App() {
                 </div>
 
                 <div className="transcript-card">
+                  <h4>Cloud Transcript</h4>
+                  <p>
+                    {selectedTicket.transcript_cloud ||
+                      'No cloud transcript available.'}
+                  </p>
+                </div>
+                <div className="transcript-card">
                   <h4>Issue Summary</h4>
 
                   {isEditing ? (
@@ -877,10 +959,21 @@ function App() {
                       </button>
 
                       {selectedTicket.status !== 'Resolved' && (
-                        <button className="reject-button">
+                        <button className="reject-button" onClick={handleReject} disabled={actionLoading}>
                           Reject
                         </button>
                     )}
+                      {selectedTicket.status === "Open" && (
+                        <button
+                          className="approve-button"
+                          onClick={handleResolve}
+                          disabled={actionLoading}
+                        >
+                          {actionLoading
+                            ? "Resolving..."
+                            : "Mark Resolved"}
+                        </button>
+                      )}
                     </>
                   )}
                 </div>
@@ -894,3 +987,4 @@ function App() {
 }
 
 export default App
+
