@@ -1,6 +1,7 @@
 import type { Ticket } from "../types/Ticket";
 
-const API_BASE_URL = "/api";
+const API_BASE_URL =
+  "https://func-vmis-dev-aqhbf4ghbxa2geca.centralus-01.azurewebsites.net/api";
 
 export async function getTickets(): Promise<Ticket[]> {
   const response = await fetch(`${API_BASE_URL}/tickets`);
