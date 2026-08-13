@@ -14,6 +14,7 @@ function App() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [statusFilter, setStatusFilter] = useState('All')
+  const [historyFilter, setHistoryFilter] = useState('All')
   const [view, setView] = useState<'list' | 'history' | 'detail'>('list')
   const [detailOrigin, setDetailOrigin] =
     useState<'list' | 'history'>('list')
@@ -87,6 +88,13 @@ function App() {
       ticket.status === 'Resolved' ||
       ticket.status === 'Rejected'
   )
+
+  const filteredHistoryTickets =
+    historyFilter === 'All'
+      ? historyTickets
+      : historyTickets.filter(
+          (ticket) => ticket.status === historyFilter
+        )
 
   async function handleSelectTicket(
     ticketId: string,
@@ -584,6 +592,17 @@ function App() {
                     Review completed and rejected maintenance requests.
                   </p>
                 </div>
+
+                <select
+                  value={historyFilter}
+                  onChange={(event) =>
+                    setHistoryFilter(event.target.value)
+                  }
+                >
+                  <option value="All">All</option>
+                  <option value="Resolved">Resolved</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
               </div>
 
               {loading && (
@@ -600,7 +619,7 @@ function App() {
 
               {!loading &&
                 !error &&
-                historyTickets.length === 0 && (
+                filteredHistoryTickets.length === 0 && (
                   <div className="empty-state">
                     <h4>No closed tickets available</h4>
                   </div>
@@ -608,7 +627,7 @@ function App() {
 
               {!loading &&
                 !error &&
-                historyTickets.length > 0 && (
+                filteredHistoryTickets.length > 0 && (
                   <div className="ticket-table">
                     <div className="ticket-row ticket-header">
                       <span>Ticket</span>
@@ -618,7 +637,7 @@ function App() {
                       <span>Created</span>
                     </div>
 
-                    {historyTickets.map((ticket) => (
+                    {filteredHistoryTickets.map((ticket) => (
                       <div
                         className="ticket-row clickable"
                         key={ticket.ticket_id}
