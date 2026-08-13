@@ -145,7 +145,7 @@ function App() {
       const updatedTicket = await updateTicket(
         selectedTicket.ticket_id,
         {
-          status: 'Open',
+          status: 'Resolved',
           requires_human_review: false,
         }
       )
@@ -1073,6 +1073,18 @@ function App() {
                         </button>
                       )}
 
+                      {selectedTicket.status === 'Open' && (
+                        <button
+                          className="approve-button"
+                          onClick={handleResolve}
+                          disabled={actionLoading}
+                        >
+                          {activeAction === 'resolve'
+                            ? 'Resolving...'
+                            : 'Mark Resolved'}
+                        </button>
+                      )}
+
                       <button
                         className="edit-button"
                         onClick={handleEdit}
@@ -1094,27 +1106,17 @@ function App() {
                           </button>
                         )}
 
-                      {selectedTicket.status === 'Open' && (
+                      {selectedTicket.status !== 'Resolved' && (
                         <button
-                          className="approve-button"
-                          onClick={handleResolve}
+                          className="reject-button"
+                          onClick={handleDelete}
                           disabled={actionLoading}
                         >
-                          {activeAction === 'resolve'
-                            ? 'Resolving...'
-                            : 'Mark Resolved'}
+                          {activeAction === 'delete'
+                            ? 'Deleting...'
+                            : 'Delete Ticket'}
                         </button>
                       )}
-
-                      <button
-                        className="reject-button"
-                        onClick={handleDelete}
-                        disabled={actionLoading}
-                      >
-                        {activeAction === 'delete'
-                          ? 'Deleting...'
-                          : 'Delete Ticket'}
-                      </button>
                     </>
                   )}
                 </div>
