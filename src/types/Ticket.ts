@@ -33,4 +33,8 @@ export interface Ticket {
   assigned_to: string | null;
   resolution_notes: string | null;
   resolved_at: string | null;
+
+  resident_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
 }

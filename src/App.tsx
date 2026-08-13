@@ -4,6 +4,7 @@ import {
   getTickets,
   getTicketById,
   updateTicket,
+  deleteTicket,
 } from './services/api'
 import type { Ticket } from './types/Ticket'
 
@@ -20,9 +21,10 @@ function App() {
     useState<'list' | 'history'>('list')
   const [actionLoading, setActionLoading] = useState(false)
   const [activeAction, setActiveAction] = useState<
-    'approve' | 'reject' | 'resolve' | null
+    'approve' | 'reject' | 'resolve' | 'delete' | null
   >(null)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
+  const [showContactInfo, setShowContactInfo] = useState(false)
 
   const [isEditing, setIsEditing] = useState(false)
   const [editLocation, setEditLocation] = useState('')
@@ -104,6 +106,7 @@ function App() {
       setDetailLoading(true)
       setError(null)
       setActionMessage(null)
+      setShowContactInfo(false)
       setIsEditing(false)
       setSelectedTicket(null)
       setDetailOrigin(origin)
@@ -259,6 +262,48 @@ function App() {
     }
   }
 
+  async function handleDelete() {
+    if (!selectedTicket) {
+      return
+    }
+
+    const confirmed = window.confirm(
+      'Are you sure you want to permanently delete this ticket?'
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    try {
+      setActionLoading(true)
+      setActiveAction('delete')
+      setError(null)
+      setActionMessage(null)
+
+      const ticketId = selectedTicket.ticket_id
+
+      await deleteTicket(ticketId)
+
+      setTickets((currentTickets) =>
+        currentTickets.filter(
+          (ticket) => ticket.ticket_id !== ticketId
+        )
+      )
+
+      setSelectedTicket(null)
+      setShowContactInfo(false)
+      setIsEditing(false)
+      setView(detailOrigin)
+    } catch (err) {
+      console.error(err)
+      setError('Could not delete ticket.')
+    } finally {
+      setActionLoading(false)
+      setActiveAction(null)
+    }
+  }
+
   function handleEdit() {
     if (!selectedTicket) {
       return
@@ -357,6 +402,7 @@ function App() {
   function handleBackToTickets() {
     setSelectedTicket(null)
     setActionMessage(null)
+    setShowContactInfo(false)
     setLocationError(false)
     setEquipmentError(false)
     setAssignedToError(false)
@@ -551,9 +597,7 @@ function App() {
                             'Not classified'}
                         </span>
 
-                        <span>
-                          {ticket.status}
-                        </span>
+                        <span>{ticket.status}</span>
 
                         <span>
                           {new Date(
@@ -664,9 +708,7 @@ function App() {
                             'Not classified'}
                         </span>
 
-                        <span>
-                          {ticket.status}
-                        </span>
+                        <span>{ticket.status}</span>
 
                         <span>
                           {new Date(
@@ -714,10 +756,7 @@ function App() {
                     </p>
 
                     <h3>
-                      {selectedTicket.ticket_id.slice(
-                        0,
-                        8
-                      )}
+                      {selectedTicket.ticket_id.slice(0, 8)}
                     </h3>
                   </div>
 
@@ -764,8 +803,7 @@ function App() {
                       <strong>
                         {selectedTicket.location ??
                           `Unit ${
-                            selectedTicket.unit_code ??
-                            'N/A'
+                            selectedTicket.unit_code ?? 'N/A'
                           }`}
                       </strong>
                     )}
@@ -823,9 +861,7 @@ function App() {
                           Pending Review
                         </option>
 
-                        <option value="Open">
-                          Open
-                        </option>
+                        <option value="Open">Open</option>
 
                         <option value="In Progress">
                           In Progress
@@ -836,9 +872,7 @@ function App() {
                         </option>
                       </select>
                     ) : (
-                      <strong>
-                        {selectedTicket.status}
-                      </strong>
+                      <strong>{selectedTicket.status}</strong>
                     )}
                   </div>
 
@@ -883,8 +917,7 @@ function App() {
                     <strong>
                       {selectedTicket.confidence !== null
                         ? `${Math.round(
-                            selectedTicket.confidence *
-                              100
+                            selectedTicket.confidence * 100
                           )}%`
                         : 'Not available'}
                     </strong>
@@ -894,14 +927,58 @@ function App() {
                     <span>Human Review</span>
 
                     <strong>
-                      {selectedTicket.requires_human_review ===
-                      null
+                      {selectedTicket.requires_human_review === null
                         ? 'Not evaluated'
                         : selectedTicket.requires_human_review
                           ? 'Required'
                           : 'Not required'}
                     </strong>
                   </div>
+                </div>
+
+                <div className="transcript-card">
+                  <div className="detail-header">
+                    <h4>Contact Info</h4>
+
+                    <button
+                      className="close-button"
+                      onClick={() =>
+                        setShowContactInfo(
+                          (current) => !current
+                        )
+                      }
+                    >
+                      {showContactInfo ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+
+                  {showContactInfo && (
+                    <div className="detail-grid">
+                      <div className="detail-card">
+                        <span>Resident Name</span>
+                        <strong>
+                          {selectedTicket.resident_name ??
+                            'Not available'}
+                        </strong>
+                      </div>
+
+                      <div className="detail-card">
+                        <span>Email</span>
+                        <strong>
+                          {selectedTicket.contact_email ??
+                            'Not available'}
+                        </strong>
+                      </div>
+
+                      <div className="detail-card">
+                        <span>Phone</span>
+                        <strong>
+                          {selectedTicket.contact_phone ??
+                            'Not available'}
+                        </strong>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="transcript-card">
@@ -931,9 +1008,7 @@ function App() {
                       value={editIssueSummary}
                       placeholder="Enter issue summary"
                       onChange={(event) =>
-                        setEditIssueSummary(
-                          event.target.value
-                        )
+                        setEditIssueSummary(event.target.value)
                       }
                     />
                   ) : (
@@ -1030,6 +1105,16 @@ function App() {
                             : 'Mark Resolved'}
                         </button>
                       )}
+
+                      <button
+                        className="reject-button"
+                        onClick={handleDelete}
+                        disabled={actionLoading}
+                      >
+                        {activeAction === 'delete'
+                          ? 'Deleting...'
+                          : 'Delete Ticket'}
+                      </button>
                     </>
                   )}
                 </div>
